@@ -1,5 +1,6 @@
 package net.fpoly.ecommerce.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.model.*;
 import net.fpoly.ecommerce.model.request.ProductRequest;
 import net.fpoly.ecommerce.repository.ProductRepo;
@@ -17,10 +18,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    @Autowired
-    private ProductRepo repo;
+    private final ProductRepo repo;
 
     @Override
     public Product create(ProductRequest productRequest) {
@@ -50,13 +51,36 @@ public class ProductServiceImpl implements ProductService {
         Product product = new Product();
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
-        product.setCreatedAt(new Date());
+        product.setCreatedAt(new Date()); 
         product.setStatus(1);
         product.setCategory(productRequest.getCategory());
         product.setBrand(productRequest.getBrand());
-        Set<ProductMaterial> productMaterials = productRequest.getProductMaterials().stream().peek(mt -> mt.setProduct(product)).collect(Collectors.toSet());
-        Set<ProductDetail> productDetails = productRequest.getProductDetails().stream().peek(pd -> pd.setProduct(product)).collect(Collectors.toSet());
-        Set<Image> images = productRequest.getImages().stream().peek(pd -> pd.setProduct(product)).collect(Collectors.toSet());
+
+        List<ProductMaterial> productMaterials = productRequest.getProductMaterials().stream()
+                .map(mt -> {
+                    mt.setProduct(product);
+                    return mt;
+                })
+                .collect(Collectors.toList());
+        product.setProductMaterials(productMaterials);
+
+        List<ProductDetail> productDetails = productRequest.getProductDetails().stream()
+                .map(pd -> {
+                    pd.setProduct(product);
+                    return pd;
+                })
+                .collect(Collectors.toList());
+        product.setProductDetails(productDetails);
+
+        List<Image> images = productRequest.getImages().stream()
+                .map(img -> {
+                    img.setProduct(product);
+                    return img;
+                })
+                .collect(Collectors.toList());
+        product.setImages(images);
+
         return product;
     }
+
 }

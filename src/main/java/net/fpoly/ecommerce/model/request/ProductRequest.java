@@ -15,14 +15,6 @@ public class ProductRequest {
 
     private String description;
 
-    private Date createdAt;
-
-    private Date updatedAt;
-
-    private Date deletedAt;
-
-    private int status;
-
     private Category category;
 
     private Brand brand;
