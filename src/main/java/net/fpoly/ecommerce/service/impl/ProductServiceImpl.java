@@ -43,7 +43,7 @@ public class ProductServiceImpl implements ProductService {
                 sort = Sort.by(Sort.Direction.DESC, "id");
                 break;
         }
-        Pageable pageable = PageRequest.of(page, limit, sort);
+        Pageable pageable = PageRequest.of(page, limit == 0 ? 100 : limit, sort);
         return repo.findAll(pageable);
     }
 

@@ -1,8 +1,11 @@
 package net.fpoly.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "product_detail")
@@ -33,4 +36,8 @@ public class ProductDetail {
 
     @Column(nullable = false)
     private int status;
+
+    @OneToMany(mappedBy = "productDetail")
+    @JsonIgnore
+    private List<OrderItem> orderItems;
 }

@@ -48,7 +48,7 @@ public class JWTService {
     }
 
     public String generateAccessToken(String username) {
-        return generateToken(username, 60*1000);
+        return generateToken(username, 24*60*60*1000);
     }
 
     public String generateRefreshToken(String username) {

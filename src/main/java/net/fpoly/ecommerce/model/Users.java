@@ -1,6 +1,7 @@
 package net.fpoly.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -29,4 +30,8 @@ public class Users {
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<Token> tokens;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Order> orders;
 }

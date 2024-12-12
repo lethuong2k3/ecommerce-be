@@ -37,8 +37,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JWTService jwtService;
 
-    @Autowired
-    private ApplicationContext context;
 
     @Autowired
     private TokenRepo tokenRepo;

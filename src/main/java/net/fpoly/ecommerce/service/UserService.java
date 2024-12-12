@@ -14,4 +14,5 @@ public interface UserService {
     AuthenticationResponse verify(SignInRequest request);
     ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request, HttpServletResponse response);
     Users getInfo(Long id);
+
 }

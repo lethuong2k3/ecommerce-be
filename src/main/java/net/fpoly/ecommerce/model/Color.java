@@ -18,6 +18,9 @@ public class Color {
     private String name;
 
     @Column(nullable = false)
+    private String hex;
+
+    @Column(nullable = false)
     private int status;
 
     @OneToMany(mappedBy = "color")
