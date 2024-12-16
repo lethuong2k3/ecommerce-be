@@ -26,8 +26,6 @@ public class Order {
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private LocalDateTime expirationTime;
 
     @ManyToOne()
     @JoinColumn(name = "user_id")
@@ -40,9 +38,8 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
-    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<OrderItem> orderItems;
-
 
 }

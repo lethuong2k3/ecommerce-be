@@ -28,7 +28,6 @@ import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
-@EnableScheduling
 public class SecurityConfig {
 
     @Autowired
@@ -49,7 +48,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/login", "/register", "/refresh-token", "/create-product", "/products").permitAll()
+                        .requestMatchers("/login", "/register", "/refresh-token", "/products").permitAll()
                         .requestMatchers("/user/**").hasAnyAuthority("USER")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())

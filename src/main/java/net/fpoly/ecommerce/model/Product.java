@@ -32,6 +32,9 @@ public class Product {
     @Column(nullable = false)
     private int status;
 
+    @Column(nullable = false)
+    private String sku;
+
     @ManyToOne()
     @JoinColumn(name = "category_id")
     private Category category;
