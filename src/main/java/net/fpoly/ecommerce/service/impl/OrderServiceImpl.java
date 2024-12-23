@@ -38,17 +38,17 @@ public class OrderServiceImpl implements OrderService {
                 .sum();
     }
 
+
     @Override
     public Order createOrder(OrderRequest orderRequest, Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
         Order order = orderRepo.findByUserAndOrderStatus(user, OrderStatus.WAITING);
         List<OrderItem> orderItems = orderRequest.getOrderItems();
 
-        // Thiết lập giá và số lượng cho các order items
         orderItems.forEach(item -> {
             item.setItemPrice(item.getProductDetail().getPrice());
             item.setQuantity(item.getQuantity());
-            // Đảm bảo rằng trường orders của OrderItem được thiết lập
+            item.setTotalPrice(item.getItemPrice() * item.getQuantity());
             item.setOrders(order);
         });
 
@@ -68,13 +68,13 @@ public class OrderServiceImpl implements OrderService {
         OrderItem existingItem = orderItemRepo.findByOrders_IdAndProductDetail_Id(order.getId(), orderItems.get(0).getProductDetail().getId());
         if (existingItem != null) {
             existingItem.setQuantity(existingItem.getQuantity() + orderItems.get(0).getQuantity());
+            existingItem.setTotalPrice(existingItem.getItemPrice() * existingItem.getQuantity());
             order.getOrderItems().add(existingItem);
         } else {
             orderItems.get(0).setOrders(order);
             order.getOrderItems().add(orderItems.get(0));
         }
 
-        // Tính toán lại tổng tiền và lưu đơn hàng
         order.setTotalAmount(totalAmount(order.getOrderItems()));
         return orderRepo.save(order);
     }

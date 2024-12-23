@@ -33,5 +33,8 @@ public class OrderItem {
     @Column(nullable = false)
     private Double itemPrice;
 
+    @Column(nullable = false)
+    private Double totalPrice;
+
 
 }

@@ -19,6 +19,8 @@ public class OrderItemResponse {
 
     private Double itemPrice;
 
+    private Double totalPrice;
+
     public static OrderItemResponse convertToOrderItemResponse(OrderItem orderItem) {
         ProductDetailResponse productDetailResponse = new ProductDetailResponse().convertToProductDetailResponse(orderItem.getProductDetail());
         return OrderItemResponse.builder()
@@ -26,6 +28,7 @@ public class OrderItemResponse {
                 .productDetail(productDetailResponse)
                 .quantity(orderItem.getQuantity())
                 .itemPrice(orderItem.getItemPrice())
+                .totalPrice(orderItem.getTotalPrice())
                 .build();
     }
 }

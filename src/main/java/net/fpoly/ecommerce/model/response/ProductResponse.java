@@ -31,10 +31,14 @@ public class ProductResponse {
 
     private List<Image> images;
 
+    private String sku;
+
+
     public static ProductResponse convertToProductResponse(Product product) {
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
+                .sku(product.getSku())
                 .description(product.getDescription())
                 .status(product.getStatus())
                 .category(product.getCategory())

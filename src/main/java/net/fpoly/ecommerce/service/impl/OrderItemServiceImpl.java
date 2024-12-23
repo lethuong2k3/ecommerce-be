@@ -16,16 +16,30 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Autowired
     private OrderRepo orderRepo;
 
+    private double totalAmount(Order order) {
+        return order.getOrderItems().stream()
+                .mapToDouble(item -> item.getQuantity() * item.getItemPrice())
+                .sum();
+    }
+
     @Override
     public void deleteOrderItem(Long orderItemId) {
         OrderItem orderItem = orderItemRepo.findById(orderItemId).orElseThrow(() -> new RuntimeException("OrderItem not found"));
         orderItemRepo.delete(orderItem);
         Order order = orderItem.getOrders();
-        double newTotalAmount = order.getOrderItems().stream()
-                .mapToDouble(item -> item.getQuantity() * item.getItemPrice())
-                .sum();
-
-        order.setTotalAmount(newTotalAmount);
+        order.setTotalAmount(totalAmount(order));
         orderRepo.save(order);
+    }
+
+    @Override
+    public OrderItem updateQuantity(Long orderItemId, int quantity) {
+        OrderItem orderItem = orderItemRepo.findById(orderItemId).orElseThrow(() -> new RuntimeException("OrderItem not found"));
+        orderItem.setQuantity(quantity);
+        orderItem.setTotalPrice(orderItem.getItemPrice() * quantity);
+        orderItemRepo.save(orderItem);
+        Order order = orderItem.getOrders();
+        order.setTotalAmount(totalAmount(order));
+        orderRepo.save(order);
+        return orderItem;
     }
 }
