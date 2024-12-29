@@ -1,11 +1,11 @@
 package net.fpoly.ecommerce.service.impl;
 
-import net.fpoly.ecommerce.model.Order;
-import net.fpoly.ecommerce.model.OrderItem;
-import net.fpoly.ecommerce.model.OrderStatus;
-import net.fpoly.ecommerce.model.Users;
+import lombok.RequiredArgsConstructor;
+import net.fpoly.ecommerce.exception.InsufficientStockException;
+import net.fpoly.ecommerce.model.*;
 import net.fpoly.ecommerce.repository.OrderItemRepo;
 import net.fpoly.ecommerce.repository.OrderRepo;
+import net.fpoly.ecommerce.repository.ProductDetailRepo;
 import net.fpoly.ecommerce.repository.UserRepo;
 import net.fpoly.ecommerce.service.OrderItemService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +15,18 @@ import java.security.Principal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderItemServiceImpl implements OrderItemService {
-    @Autowired
-    private OrderItemRepo orderItemRepo;
+    private final OrderItemRepo orderItemRepo;
 
-    @Autowired
-    private OrderRepo orderRepo;
+    private final OrderRepo orderRepo;
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserRepo userRepo;
+
+
+    private final ProductDetailRepo productDetailRepo;
+
+
 
     private double totalAmount(Order order) {
         return order.getOrderItems().stream()
@@ -40,10 +43,19 @@ public class OrderItemServiceImpl implements OrderItemService {
         orderRepo.save(order);
     }
 
+    private Integer checkQuantity(Integer quantity, ProductDetail productDetail) {
+        ProductDetail productDetail1 = productDetailRepo.findById(productDetail.getId()).orElseThrow(() -> new IllegalArgumentException("Product detail not found"));
+        if (quantity > productDetail1.getAmount()) {
+            throw new InsufficientStockException("Product name " + productDetail1.getProduct().getName() + "is out of stock");
+        }
+        return quantity;
+    }
+
     @Override
     public OrderItem updateQuantity(Long orderItemId, int quantity) {
         OrderItem orderItem = orderItemRepo.findById(orderItemId).orElseThrow(() -> new RuntimeException("OrderItem not found"));
-        orderItem.setQuantity(quantity);
+
+        orderItem.setQuantity(checkQuantity(quantity, orderItem.getProductDetail()));
         orderItem.setTotalPrice(orderItem.getItemPrice() * quantity);
         orderItemRepo.save(orderItem);
         Order order = orderItem.getOrders();

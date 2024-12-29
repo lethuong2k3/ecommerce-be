@@ -18,9 +18,10 @@ public class ProductController {
     public ApiResponse<?> getAllProducts(
             @RequestParam(required = false) int sortType,
             @RequestParam(required = false) int page,
-            @RequestParam(required = false, defaultValue = "0 ") int limit) {
+            @RequestParam(required = false) int limit) {
         return ApiResponse.success(productService.getAllProducts(sortType, page, limit));
     }
+
 
     @PostMapping("/create-product")
     public ResponseEntity<ApiResponse<?>> createProduct(@Valid @RequestBody ProductRequest productRequest, BindingResult bindingResult) {

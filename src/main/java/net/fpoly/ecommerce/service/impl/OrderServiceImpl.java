@@ -1,15 +1,14 @@
 package net.fpoly.ecommerce.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.*;
 import net.fpoly.ecommerce.model.request.OrderRequest;
 import net.fpoly.ecommerce.model.response.OrderItemResponse;
 import net.fpoly.ecommerce.model.response.OrderResponse;
 import net.fpoly.ecommerce.model.response.ProductDetailResponse;
 import net.fpoly.ecommerce.model.response.ProductResponse;
-import net.fpoly.ecommerce.repository.OrderItemRepo;
-import net.fpoly.ecommerce.repository.OrderRepo;
-import net.fpoly.ecommerce.repository.ProductDetailRepo;
-import net.fpoly.ecommerce.repository.UserRepo;
+import net.fpoly.ecommerce.repository.*;
 import net.fpoly.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,16 +19,16 @@ import java.util.*;
 
 
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private OrderRepo orderRepo;
+    private final OrderRepo orderRepo;
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserRepo userRepo;
 
-    @Autowired
-    private OrderItemRepo orderItemRepo;
+    private final OrderItemRepo orderItemRepo;
+
+    private final ProductDetailRepo productDetailRepo;
 
 
     private double totalAmount(List<OrderItem> orderItems) {
@@ -38,6 +37,13 @@ public class OrderServiceImpl implements OrderService {
                 .sum();
     }
 
+    private Integer checkQuantity(Integer quantity, ProductDetail productDetail) {
+         ProductDetail productDetail1 = productDetailRepo.findById(productDetail.getId()).orElseThrow(() -> new IllegalArgumentException("Product detail not found"));
+        if (quantity > productDetail1.getAmount()) {
+            throw new InsufficientStockException("Product name " + productDetail1.getProduct().getName() + "is out of stock");
+        }
+        return quantity;
+    }
 
     @Override
     public Order createOrder(OrderRequest orderRequest, Principal principal) {
@@ -47,7 +53,7 @@ public class OrderServiceImpl implements OrderService {
 
         orderItems.forEach(item -> {
             item.setItemPrice(item.getProductDetail().getPrice());
-            item.setQuantity(item.getQuantity());
+            item.setQuantity(checkQuantity(item.getQuantity(), item.getProductDetail()));
             item.setTotalPrice(item.getItemPrice() * item.getQuantity());
             item.setOrders(order);
         });
@@ -67,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
 
         OrderItem existingItem = orderItemRepo.findByOrders_IdAndProductDetail_Id(order.getId(), orderItems.get(0).getProductDetail().getId());
         if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + orderItems.get(0).getQuantity());
+            existingItem.setQuantity(checkQuantity(existingItem.getQuantity() + orderItems.get(0).getQuantity(), existingItem.getProductDetail()));
             existingItem.setTotalPrice(existingItem.getItemPrice() * existingItem.getQuantity());
             order.getOrderItems().add(existingItem);
         } else {

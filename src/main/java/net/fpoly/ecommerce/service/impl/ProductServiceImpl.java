@@ -31,20 +31,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<Product> getAllProducts(int sortType, int page, int limit) {
-        Sort sort;
-        switch (sortType) {
-            case 4:
-                sort = Sort.by(Sort.Direction.ASC, "price");
-                break;
-            case 5:
-                sort = Sort.by(Sort.Direction.DESC, "price");
-                break;
-            default:
-                sort = Sort.by(Sort.Direction.DESC, "id");
-                break;
+        Pageable pageable;
+        if (limit == 0) {
+            pageable = Pageable.unpaged();
+        } else {
+            pageable = PageRequest.of(page, limit);
         }
-        Pageable pageable = PageRequest.of(page, limit == 0 ? 100 : limit, sort);
-        return repo.findAll(pageable);
+        return switch (sortType) {
+            case 4 -> repo.findAllSortedByProductDetailPriceAsc(pageable);
+            case 5 -> repo.findAllSortedByProductDetailPriceDesc(pageable);
+            default -> repo.findAll(pageable);
+        };
     }
 
     private static Product setProduct(ProductRequest productRequest) {

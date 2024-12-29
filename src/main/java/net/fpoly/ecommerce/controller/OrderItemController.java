@@ -1,5 +1,6 @@
 package net.fpoly.ecommerce.controller;
 
+import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.request.OrderItemRequest;
 import net.fpoly.ecommerce.model.response.ApiResponse;
 import net.fpoly.ecommerce.service.OrderItemService;
@@ -22,7 +23,13 @@ public class OrderItemController {
 
     @PutMapping("/user/cart/{orderId}")
     public ApiResponse<?> updateQuantity(@PathVariable Long orderId, @RequestBody OrderItemRequest request) {
-        return ApiResponse.success(orderItemService.updateQuantity(orderId, request.getQuantity()));
+        try {
+            return ApiResponse.success(orderItemService.updateQuantity(orderId, request.getQuantity()));
+        } catch (InsufficientStockException e) {
+            return ApiResponse.error("400", e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("500", e.getMessage());
+        }
     }
 
     @DeleteMapping("/user/cart/delete")
