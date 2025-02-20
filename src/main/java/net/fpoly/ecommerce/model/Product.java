@@ -1,5 +1,6 @@
 package net.fpoly.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -51,4 +52,8 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images;
+
+    @OneToMany(mappedBy = "product")
+    @JsonIgnore
+    private List<WishList> wishlists;
 }

@@ -3,6 +3,7 @@ package net.fpoly.ecommerce.service.impl;
 import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.model.*;
 import net.fpoly.ecommerce.model.request.ProductRequest;
+import net.fpoly.ecommerce.model.request.RelatedProductRequest;
 import net.fpoly.ecommerce.repository.ProductRepo;
 import net.fpoly.ecommerce.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,16 @@ public class ProductServiceImpl implements ProductService {
         };
     }
 
+    @Override
+    public Product getProduct(Long id) {
+        return repo.findById(id).orElse(null);
+    }
+
+    @Override
+    public List<Product> relatedProducts(RelatedProductRequest request) {
+        return repo.findAllByCategoryAndIdNot(request.getCategory(), request.getProductId(), PageRequest.of(0, request.getLimit()));
+    }
+
     private static Product setProduct(ProductRequest productRequest) {
         Product product = new Product();
         product.setName(productRequest.getName());
@@ -54,26 +65,17 @@ public class ProductServiceImpl implements ProductService {
         product.setBrand(productRequest.getBrand());
 
         List<ProductMaterial> productMaterials = productRequest.getProductMaterials().stream()
-                .map(mt -> {
-                    mt.setProduct(product);
-                    return mt;
-                })
+                .peek(mt -> mt.setProduct(product))
                 .collect(Collectors.toList());
         product.setProductMaterials(productMaterials);
 
         List<ProductDetail> productDetails = productRequest.getProductDetails().stream()
-                .map(pd -> {
-                    pd.setProduct(product);
-                    return pd;
-                })
+                .peek(pd -> pd.setProduct(product))
                 .collect(Collectors.toList());
         product.setProductDetails(productDetails);
 
         List<Image> images = productRequest.getImages().stream()
-                .map(img -> {
-                    img.setProduct(product);
-                    return img;
-                })
+                .peek(img -> img.setProduct(product))
                 .collect(Collectors.toList());
         product.setImages(images);
 

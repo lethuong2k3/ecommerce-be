@@ -37,7 +37,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JWTService jwtService;
 
-
     @Autowired
     private TokenRepo tokenRepo;
 
@@ -54,8 +53,7 @@ public class UserServiceImpl implements UserService {
         String accessToken = jwtService.generateAccessToken(user.getEmail());
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
         saveUserToken(accessToken, refreshToken, user);
-        AuthenticationResponse authResponse = getAuthResponse(accessToken, refreshToken, user);
-        return authResponse;
+        return getAuthResponse(accessToken, refreshToken, user);
     }
 
     private AuthenticationResponse getAuthResponse(String accessToken, String refreshToken,Users user) {
@@ -87,8 +85,7 @@ public class UserServiceImpl implements UserService {
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
         revokeAllTokenByUser(user);
         saveUserToken(accessToken, refreshToken, user);
-        AuthenticationResponse authResponse = getAuthResponse(accessToken, refreshToken, user);
-        return authResponse;
+        return getAuthResponse(accessToken, refreshToken, user);
     }
 
     private void revokeAllTokenByUser(Users user) {
