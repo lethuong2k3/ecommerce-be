@@ -10,6 +10,7 @@ import java.security.Principal;
 
 public interface OrderService {
     Order createOrder(OrderRequest orderRequest, Principal principal);
+    Order updateOrder(OrderRequest orderRequest, Principal principal);
     OrderResponse findByUserAndOrderStatus(Principal principal, OrderStatus orderStatus);
 
 }

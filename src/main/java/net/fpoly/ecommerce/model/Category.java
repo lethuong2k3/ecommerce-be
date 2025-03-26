@@ -18,6 +18,9 @@ public class Category {
     private String name;
 
     @Column(nullable = false)
+    private String imageUrl;
+
+    @Column(nullable = false)
     private int status;
 
     @OneToMany(mappedBy = "category")

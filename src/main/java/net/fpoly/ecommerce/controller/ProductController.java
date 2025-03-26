@@ -19,8 +19,11 @@ public class ProductController {
     public ApiResponse<?> getAllProducts(
             @RequestParam(required = false) int sortType,
             @RequestParam(required = false) int page,
-            @RequestParam(required = false) int limit) {
-        return ApiResponse.success(productService.getAllProducts(sortType, page, limit));
+            @RequestParam(required = false) int limit,
+            @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) String keyword
+            ) {
+        return ApiResponse.success(productService.getAllProducts(categoryName, keyword, sortType, page, limit));
     }
 
     @GetMapping("/product/{id}")

@@ -85,6 +85,12 @@ public class OrderServiceImpl implements OrderService {
         return orderRepo.save(order);
     }
 
+    @Override
+    public Order updateOrder(OrderRequest orderRequest, Principal principal) {
+
+        return null;
+    }
+
 
     @Override
     public OrderResponse findByUserAndOrderStatus(Principal principal, OrderStatus orderStatus) {

@@ -31,7 +31,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<Product> getAllProducts(int sortType, int page, int limit) {
+    public Page<Product> getAllProducts(String categoryName, String keyword,int sortType, int page, int limit) {
         Pageable pageable;
         if (limit == 0) {
             pageable = Pageable.unpaged();
@@ -39,9 +39,9 @@ public class ProductServiceImpl implements ProductService {
             pageable = PageRequest.of(page, limit);
         }
         return switch (sortType) {
-            case 4 -> repo.findAllSortedByProductDetailPriceAsc(pageable);
-            case 5 -> repo.findAllSortedByProductDetailPriceDesc(pageable);
-            default -> repo.findAll(pageable);
+            case 8 -> repo.findAllSortedByProductDetailPriceAsc(categoryName, keyword, pageable);
+            case 12 -> repo.findAllSortedByProductDetailPriceDesc(categoryName, keyword,pageable);
+            default -> repo.findAll(categoryName, keyword, pageable);
         };
     }
 
@@ -52,7 +52,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Product> relatedProducts(RelatedProductRequest request) {
-        return repo.findAllByCategoryAndIdNot(request.getCategory(), request.getProductId(), PageRequest.of(0, request.getLimit()));
+        return repo.findAllByCategoryAndIdNotAndStatus(request.getCategory(), request.getProductId(), 1,PageRequest.of(0, request.getLimit()));
     }
 
     private static Product setProduct(ProductRequest productRequest) {
