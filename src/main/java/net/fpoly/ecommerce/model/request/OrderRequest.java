@@ -13,5 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class OrderRequest {
+
     private List<OrderItem> orderItems;
+
+    private ShipmentRequest shipmentRequest;
+
+    private Long paymentTypeId;
 }

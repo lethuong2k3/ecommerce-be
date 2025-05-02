@@ -9,6 +9,7 @@ import net.fpoly.ecommerce.model.OrderItem;
 import net.fpoly.ecommerce.model.OrderStatus;
 import net.fpoly.ecommerce.model.Users;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -23,9 +24,7 @@ public class OrderResponse {
 
     private Date orderDate;
 
-    private LocalDateTime expirationTime;
-
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     private OrderStatus orderStatus;
 

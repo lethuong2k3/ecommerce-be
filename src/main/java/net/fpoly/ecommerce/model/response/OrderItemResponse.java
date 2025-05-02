@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.fpoly.ecommerce.model.OrderItem;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,9 +19,9 @@ public class OrderItemResponse {
 
     private Integer quantity;
 
-    private Double itemPrice;
+    private BigDecimal itemPrice;
 
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
     public static OrderItemResponse convertToOrderItemResponse(OrderItem orderItem) {
         ProductDetailResponse productDetailResponse = new ProductDetailResponse().convertToProductDetailResponse(orderItem.getProductDetail());

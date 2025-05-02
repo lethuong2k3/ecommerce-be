@@ -11,6 +11,7 @@ import net.fpoly.ecommerce.service.OrderItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.List;
 
@@ -28,10 +29,9 @@ public class OrderItemServiceImpl implements OrderItemService {
 
 
 
-    private double totalAmount(Order order) {
+    private BigDecimal totalAmount(Order order) {
         return order.getOrderItems().stream()
-                .mapToDouble(item -> item.getQuantity() * item.getItemPrice())
-                .sum();
+                .map(item -> item.getItemPrice().multiply(BigDecimal.valueOf(item.getQuantity()))).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
@@ -54,9 +54,8 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Override
     public OrderItem updateQuantity(Long orderItemId, int quantity) {
         OrderItem orderItem = orderItemRepo.findById(orderItemId).orElseThrow(() -> new RuntimeException("OrderItem not found"));
-
         orderItem.setQuantity(checkQuantity(quantity, orderItem.getProductDetail()));
-        orderItem.setTotalPrice(orderItem.getItemPrice() * quantity);
+        orderItem.setTotalPrice(orderItem.getItemPrice().multiply(BigDecimal.valueOf(quantity)));
         orderItemRepo.save(orderItem);
         Order order = orderItem.getOrders();
         order.setTotalAmount(totalAmount(order));
@@ -67,10 +66,10 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Override
     public void deleteAllOrderItems(Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
-        List<OrderItem> orderItems = orderItemRepo.findAllByUserAndOrderStatus(user, OrderStatus.WAITING);
+        List<OrderItem> orderItems = orderItemRepo.findAllByUserAndOrderStatus(user, OrderStatus.CART);
         orderItemRepo.deleteAll(orderItems);
-        Order order = orderRepo.findByUserAndOrderStatus(user, OrderStatus.WAITING);
-        order.setTotalAmount(.0);
+        Order order = orderRepo.findByUserAndOrderStatus(user, OrderStatus.CART);
+        order.setTotalAmount(BigDecimal.ZERO);
         orderRepo.save(order);
     }
 }

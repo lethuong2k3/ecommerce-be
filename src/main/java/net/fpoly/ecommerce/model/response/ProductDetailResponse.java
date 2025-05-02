@@ -9,6 +9,8 @@ import net.fpoly.ecommerce.model.Product;
 import net.fpoly.ecommerce.model.ProductDetail;
 import net.fpoly.ecommerce.model.Size;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +20,7 @@ public class ProductDetailResponse {
 
     ProductResponse product;
 
-    private double price;
+    private BigDecimal price;
 
     Size size;
 

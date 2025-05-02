@@ -1,4 +1,4 @@
-package net.fpoly.ecommerce.service;
+package net.fpoly.ecommerce.service.impl;
 
 import net.fpoly.ecommerce.model.UserPrincipal;
 import net.fpoly.ecommerce.model.Users;

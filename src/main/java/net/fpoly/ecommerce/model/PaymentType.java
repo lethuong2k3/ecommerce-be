@@ -1,7 +1,10 @@
 package net.fpoly.ecommerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 
 @Entity
 @Table(name = "payment_type")
@@ -19,4 +22,9 @@ public class PaymentType {
 
     @Column
     private String description;
+    
+
+    @OneToMany(mappedBy = "paymentType")
+    @JsonIgnore
+    private List<Payment> payments;
 }

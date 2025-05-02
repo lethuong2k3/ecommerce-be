@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -26,14 +27,12 @@ public class Order {
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 
-
     @ManyToOne()
     @JoinColumn(name = "user_id")
-    @JsonBackReference
     private Users user;
 
     @Column(nullable = false)
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
@@ -42,4 +41,15 @@ public class Order {
     @JsonManagedReference
     private List<OrderItem> orderItems;
 
+    @ManyToOne()
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
+    @ManyToOne()
+    @JoinColumn(name = "shipment_id")
+    private Shipment shipment;
+
+    @ManyToOne()
+    @JoinColumn(name = "payment_info_id")
+    private PaymentInfo paymentInfo;
 }

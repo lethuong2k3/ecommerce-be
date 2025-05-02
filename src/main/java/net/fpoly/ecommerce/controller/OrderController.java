@@ -1,13 +1,12 @@
 package net.fpoly.ecommerce.controller;
 
+import com.mservice.shared.exception.MoMoException;
 import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.OrderStatus;
 import net.fpoly.ecommerce.model.request.OrderRequest;
 import net.fpoly.ecommerce.model.response.ApiResponse;
-import net.fpoly.ecommerce.service.OrderItemService;
 import net.fpoly.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,9 +30,20 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/user/save-order")
+    public ResponseEntity<?> saveOrder(@RequestBody OrderRequest orderRequest, Principal principal) throws Exception {
+        try {
+            return ResponseEntity.ok(orderService.updateOrder(orderRequest, principal));
+        } catch (InsufficientStockException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("400", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("500", e.getMessage()));
+        }
+    }
+
     @GetMapping("/user/cart")
     public ResponseEntity<?> getCart(Principal principal) {
-        return ResponseEntity.ok(orderService.findByUserAndOrderStatus(principal, OrderStatus.WAITING));
+        return ResponseEntity.ok(orderService.findByUserAndOrderStatus(principal, OrderStatus.CART));
     }
 
 

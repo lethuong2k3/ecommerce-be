@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -21,7 +22,7 @@ public class ProductDetail {
     Product product;
 
     @Column(nullable = false)
-    private double price;
+    private BigDecimal price;
 
     @ManyToOne
     @JoinColumn(name = "size_id")
