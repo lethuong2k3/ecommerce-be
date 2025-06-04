@@ -11,7 +11,7 @@ public class Token {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "access_token")
+    @Column(name = "access_token", unique = true)
     private String accessToken;
 
     @Column(name = "refresh_token")

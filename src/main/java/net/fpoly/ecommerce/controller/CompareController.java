@@ -19,7 +19,15 @@ public class CompareController {
 
     @GetMapping("/user/list-compare")
     public ResponseEntity<ApiResponse<?>> listCompareByUser(Principal principal) {
-        return ResponseEntity.ok(ApiResponse.success(compareService.findAllByUser(principal)));
+        return ResponseEntity.ok(ApiResponse.success(compareService.findAllByUserAndStatus(principal)));
+    }
+
+    @PostMapping("/user/compare-product")
+    public ResponseEntity<?> getCompareByProductAndUser(@Valid @RequestBody CompareRequest compareRequest, Principal principal, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(ApiResponse.errorBindingResult(bindingResult));
+        }
+        return ResponseEntity.ok(compareService.findByProductAndUser(compareRequest.getProduct(), principal));
     }
 
     @PostMapping("/user/create-compare")
@@ -32,15 +40,11 @@ public class CompareController {
         return ResponseEntity.ok(ApiResponse.success(compareService.createCompare(request, principal)));
     }
 
-    @PostMapping("/user/delete-compare")
-    public ResponseEntity<ApiResponse<?>> deleteCompare(
-            @Valid @RequestBody CompareRequest request,
-            Principal principal, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(ApiResponse.errorBindingResult(bindingResult));
-        }
-        compareService.deleteCompare(request, principal);
-        return ResponseEntity.ok(ApiResponse.success("Deleted " + request.getProduct().getName() + " to compare successfully"));
+    @DeleteMapping("/user/delete-compare/{id}")
+    public ResponseEntity<?> deleteCompare(
+            @PathVariable Long id, Principal principal) {
+        compareService.deleteCompare(id, principal);
+        return ResponseEntity.ok("Deleted compare successfully");
     }
 
     @PostMapping("/user/delete-all-compare")

@@ -24,6 +24,14 @@ public class WishListController {
         return ResponseEntity.ok(wishListService.findAllByUserAndStatus(principal));
     }
 
+    @PostMapping("/user/wishlist-product-user")
+    public ResponseEntity<?> getByProductAndUser(@Valid @RequestBody WishListRequest request, Principal principal, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(ApiResponse.errorBindingResult(bindingResult));
+        }
+        return ResponseEntity.ok(wishListService.findByProductAndUser(request.getProduct(), principal));
+    }
+
     @PostMapping("/user/create-wishlist")
     public ResponseEntity<ApiResponse<?>> createWishList (@Valid @RequestBody WishListRequest request, Principal principal, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {

@@ -2,6 +2,7 @@ package net.fpoly.ecommerce.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.model.Compare;
+import net.fpoly.ecommerce.model.Product;
 import net.fpoly.ecommerce.model.Users;
 import net.fpoly.ecommerce.model.request.CompareRequest;
 import net.fpoly.ecommerce.repository.CompareRepo;
@@ -24,28 +25,43 @@ public class CompareServiceImpl implements CompareService {
     @Override
     public Compare createCompare(CompareRequest request, Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
+        Compare isComapre = compareRepo.findByProductAndUser(request.getProduct(), user);
+        if (isComapre != null) {
+            isComapre.setStatus(1);
+            return compareRepo.save(isComapre);
+        }
         Compare compare = new Compare();
         compare.setUser(user);
         compare.setProduct(request.getProduct());
         compare.setCreatedAt(new Date());
+        compare.setStatus(1);
         return compareRepo.save(compare);
     }
 
     @Override
-    public List<Compare> findAllByUser(Principal principal) {
+    public List<Compare> findAllByUserAndStatus(Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
-        return compareRepo.findByUser(user);
+        return compareRepo.findByUserAndStatus(user, 1);
     }
 
     @Override
-    public void deleteCompare(CompareRequest request, Principal principal) {
+    public Compare findByProductAndUser(Product product, Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
-        Compare compare = compareRepo.findByIdAndUser(request.getId(), user);
-        compareRepo.delete(compare);
+        return compareRepo.findByProductAndUser(product, user);
+    }
+
+    @Override
+    public void deleteCompare(Long id, Principal principal) {
+        Users user = userRepo.findByEmail(principal.getName());
+        Compare compare = compareRepo.findByIdAndUser(id, user);
+        if (compare != null) {
+            compare.setStatus(0);
+            compareRepo.save(compare);
+        }
     }
 
     @Override
     public void deleteAllCompare(List<CompareRequest> requests, Principal principal) {
-        requests.forEach(request -> deleteCompare(request, principal));
+        requests.forEach(request -> deleteCompare(request.getId(), principal));
     }
 }

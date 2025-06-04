@@ -7,6 +7,7 @@ import net.fpoly.ecommerce.model.*;
 import net.fpoly.ecommerce.model.momo.PaymentResponse;
 import net.fpoly.ecommerce.model.momo.RequestType;
 import net.fpoly.ecommerce.model.request.OrderRequest;
+import net.fpoly.ecommerce.model.request.OrderTrackingRequest;
 import net.fpoly.ecommerce.model.response.OrderResponse;
 import net.fpoly.ecommerce.repository.*;
 import net.fpoly.ecommerce.service.OrderService;
@@ -14,11 +15,16 @@ import net.fpoly.ecommerce.service.PaymentService;
 import net.fpoly.ecommerce.service.ShipmentService;
 import net.fpoly.ecommerce.service.impl.momo.CreateOrderMoMo;
 import net.fpoly.ecommerce.util.LogUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -104,10 +110,13 @@ public class OrderServiceImpl implements OrderService {
         order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
         String partnerClientId = "partnerClientId";
         String orderInfo = "Pay with MoMo";
-        String returnURL = "http://localhost:8080/user/api/momo/payment";
-        String notifyURL = "http://localhost:8080/user/api/momo/notify";
+        String returnURL = "http://localhost:5173/order-status";
+        String notifyURL = "https://google.com.vn";
         Environment environment = Environment.selectEnv("dev");
         PaymentResponse captureWalletMoMoResponse = CreateOrderMoMo.process(environment, orderId, requestId, Long.toString(order.getTotalAmount().longValue()),  orderInfo, returnURL, notifyURL, "", RequestType.PAY_WITH_ATM, Boolean.TRUE);
+        PaymentInfo paymentInfo = new PaymentInfo();
+        paymentInfo.setOrderId(captureWalletMoMoResponse.getOrderId());
+        paymentInfo.setRequestId(captureWalletMoMoResponse.getRequestId());
         deductStockForOrderItems(order);
         orderRepo.save(order);
         return captureWalletMoMoResponse;
@@ -156,10 +165,19 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Page<OrderResponse> findByKeywordAndBetweenDate(OrderTrackingRequest request, Principal principal) {
+        Sort sort = request.getType().equals("desc") ? Sort.by(request.getSortBy()).descending() : Sort.by(request.getSortBy()).ascending();
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
+        Users user = userRepo.findByEmail(principal.getName());
+        Page<Order> orders = orderRepo.findByKeywordAndBetweenDate(request.getKeyword(), request.getStartDate(), request.getEndDate(), user, pageable);
+        return orders.map(OrderResponse::convertToOrderResponse);
+    }
+
+    @Override
     public OrderResponse restoreStockForOrderItems(Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
 
         return null;
     }
-
+ 
 }

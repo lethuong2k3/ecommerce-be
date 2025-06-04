@@ -4,6 +4,7 @@ import com.mservice.shared.exception.MoMoException;
 import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.OrderStatus;
 import net.fpoly.ecommerce.model.request.OrderRequest;
+import net.fpoly.ecommerce.model.request.OrderTrackingRequest;
 import net.fpoly.ecommerce.model.response.ApiResponse;
 import net.fpoly.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ public class OrderController {
         try {
             return ApiResponse.success(orderService.createOrder(orderRequest, principal));
         } catch (InsufficientStockException e) {
-            return ApiResponse.error("400", e.getMessage());
+            return ApiResponse.error("401", e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("500", e.getMessage());
         }
@@ -46,5 +47,9 @@ public class OrderController {
         return ResponseEntity.ok(orderService.findByUserAndOrderStatus(principal, OrderStatus.CART));
     }
 
+    @PostMapping("/user/order-tracking")
+    public ResponseEntity<?> getOrders(@RequestBody OrderTrackingRequest request, Principal principal) {
+        return ResponseEntity.ok(orderService.findByKeywordAndBetweenDate(request, principal));
+    }
 
 }

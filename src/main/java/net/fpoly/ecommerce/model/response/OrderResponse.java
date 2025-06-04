@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.fpoly.ecommerce.model.Order;
-import net.fpoly.ecommerce.model.OrderItem;
-import net.fpoly.ecommerce.model.OrderStatus;
-import net.fpoly.ecommerce.model.Users;
+import net.fpoly.ecommerce.model.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +27,10 @@ public class OrderResponse {
 
     private List<OrderItemResponse> orderItems;
 
+    private Payment payment;
+
+    private Shipment shipment;
+
     public static OrderResponse convertToOrderResponse(Order order) {
         List<OrderItemResponse> orderItems = order.getOrderItems().stream().map(OrderItemResponse::convertToOrderItemResponse).toList();
         return OrderResponse.builder()
@@ -38,6 +39,8 @@ public class OrderResponse {
                 .totalAmount(order.getTotalAmount())
                 .orderStatus(order.getOrderStatus())
                 .orderItems(orderItems)
+                .payment(order.getPayment())
+                .shipment(order.getShipment())
                 .build();
     }
 

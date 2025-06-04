@@ -56,4 +56,8 @@ public class Product {
     @OneToMany(mappedBy = "product")
     @JsonIgnore
     private List<WishList> wishlists;
+
+    @OneToMany(mappedBy = "product")
+    @JsonIgnore
+    private List<Review> reviews;
 }

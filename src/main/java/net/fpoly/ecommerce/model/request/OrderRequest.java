@@ -19,4 +19,8 @@ public class OrderRequest {
     private ShipmentRequest shipmentRequest;
 
     private Long paymentTypeId;
+
+    private String sortBy;
+
+
 }

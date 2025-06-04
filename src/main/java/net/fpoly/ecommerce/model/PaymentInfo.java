@@ -18,8 +18,6 @@ public class PaymentInfo {
 
     private String requestId;
 
-    private Long transId;
-
     @OneToMany(mappedBy = "paymentInfo")
     @JsonIgnore
     private List<Order> orders;

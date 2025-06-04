@@ -1,6 +1,7 @@
 package net.fpoly.ecommerce.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import net.fpoly.ecommerce.model.Product;
 import net.fpoly.ecommerce.model.Users;
 import net.fpoly.ecommerce.model.WishList;
 import net.fpoly.ecommerce.model.request.WishListRequest;
@@ -43,9 +44,20 @@ public class WishListServiceImpl implements WishListService {
     }
 
     @Override
-    public WishList deleteWishList(Long id, Principal principal) {
+    public WishList findByIdAndUser(Long id, Principal principal) {
         Users user = userRepo.findByEmail(principal.getName());
-        WishList wishList = wishListRepo.findByIdAndUser(id, user);
+        return wishListRepo.findByIdAndUser(id, user);
+    }
+
+    @Override
+    public WishList findByProductAndUser(Product product, Principal principal) {
+        Users user = userRepo.findByEmail(principal.getName());
+        return wishListRepo.findByProductAndUser(product, user);
+    }
+
+    @Override
+    public WishList deleteWishList(Long id, Principal principal) {
+        WishList wishList = findByIdAndUser(id, principal);
         if (wishList != null) {
             wishList.setStatus(0);
             return wishListRepo.save(wishList);

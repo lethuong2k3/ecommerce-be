@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-
 public class Environment {
 
     private PartnerInfo partnerInfo;
