@@ -179,10 +179,10 @@ public class UserServiceImpl implements UserService {
     public void resendVerificationCode(String email) {
         Users user = repo.findByEmail(email);
         if (user == null) {
-            throw new RuntimeException("User not found");
+            throw new RuntimeException("Lỗi không tìm thấy user");
         }
         if (user.isEnabled()) {
-            throw new RuntimeException("User is already verified");
+            throw new RuntimeException("Tài khoản đã được xác minh.");
         }
         user.setVerificationCode(generateVerificationCode());
         user.setVerificationCodeExpiresAt(LocalDateTime.now().plusHours(1));
