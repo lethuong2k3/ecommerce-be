@@ -21,26 +21,14 @@ public class Shipment {
     @Column(length = 100, nullable = false)
     private String lastName;
 
-    @Column(length = 100)
-    private String companyName;
-
-    @Column(length = 50, nullable = false)
-    private String country;
-
     @Column(length = 100, nullable = false)
     private String address;
 
-    @Column(length = 100, nullable = false)
-    private String city;
-
-    @Column(length = 20, nullable = false)
-    private String state;
+    @Column(length = 50, nullable = false)
+    private String idAddress;
 
     @Column(length = 20, nullable = false)
     private String phone;
-
-    @Column(length = 10, nullable = false)
-    private String zipCode;
 
     @Column(length = 100, nullable = false)
     private String email;

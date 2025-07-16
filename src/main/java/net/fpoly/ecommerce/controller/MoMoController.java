@@ -1,23 +1,29 @@
 package net.fpoly.ecommerce.controller;
 
-import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.config.Environment;
 import net.fpoly.ecommerce.constants.Parameter;
+import net.fpoly.ecommerce.model.Order;
+import net.fpoly.ecommerce.model.OrderStatus;
 import net.fpoly.ecommerce.model.momo.QueryStatusTransactionResponse;
+import net.fpoly.ecommerce.repository.OrderRepo;
+import net.fpoly.ecommerce.service.OrderService;
 import net.fpoly.ecommerce.service.impl.momo.QueryTransactionStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.Map;
+
 
 @RestController
 public class MoMoController {
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private OrderRepo orderRepo;
 
     @GetMapping("/user/momo/ipn")
     public ResponseEntity<?> handleMoMoRedirect(@RequestParam String orderId, @RequestParam String requestId) {
@@ -37,10 +43,26 @@ public class MoMoController {
 
     }
 
-    @GetMapping("/user/api/momo/notify")
-    public Integer paymentNotify(@RequestParam Map<String, String> request) {
-        Integer resultCode = Integer.valueOf(request.get(Parameter.RESULT_CODE));
-        return resultCode;
+    @PostMapping("/user/momo/notify")
+    public ResponseEntity<String> paymentNotify(@RequestBody Map<String, String> request) {
+        System.out.println(request);
+        try {
+            String orderId = request.get(Parameter.ORDER_ID);
+            String requestId = request.get(Parameter.REQUEST_ID);
+            Integer resultCode = Integer.valueOf(request.get(Parameter.RESULT_CODE));
+
+            Order order = orderRepo.findByOrderIdAndRequestId(orderId, requestId);
+            if (order == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng");
+            }
+
+            order.setOrderStatus(resultCode == 0 ? OrderStatus.PAID : OrderStatus.CANCELLED);
+            orderRepo.save(order);
+
+            return ResponseEntity.ok("Thanh toán thành công");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
     }
 
 }

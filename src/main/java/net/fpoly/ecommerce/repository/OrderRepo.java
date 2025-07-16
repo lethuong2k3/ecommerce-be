@@ -18,7 +18,10 @@ import java.util.List;
 public interface OrderRepo extends JpaRepository<Order, Long> {
     Order findByUserAndOrderStatus(Users user, OrderStatus orderStatus);
     List<Order> findByUserAndOrderStatusNot(Users user, OrderStatus orderStatus);
-
+    @Query("""
+        SELECT o FROM Order o JOIN o.paymentInfo pi WHERE pi.orderId = :orderId AND pi.requestId = :requestId
+    """)
+    Order findByOrderIdAndRequestId(@Param("orderId") String orderId, @Param("requestId") String requestId);
     @Query("""
         SELECT o from Order o WHERE (
                                   :keyword IS NULL OR

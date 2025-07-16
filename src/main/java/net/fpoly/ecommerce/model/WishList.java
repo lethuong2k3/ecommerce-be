@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Entity
 @Table(name = "wishlist")
 @Data
@@ -26,6 +28,9 @@ public class WishList {
     @JoinColumn(name = "user_id")
     @JsonBackReference
     Users user;
+
+    @Column(nullable = false)
+    private Date createdAt;
 
     @Column(nullable = false)
     private int status;

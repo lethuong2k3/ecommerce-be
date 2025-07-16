@@ -16,6 +16,7 @@ public interface OrderService {
     Order createOrder(OrderRequest orderRequest, Principal principal);
     Object updateOrder(OrderRequest orderRequest, Principal principal) throws Exception;
     OrderResponse findByUserAndOrderStatus(Principal principal, OrderStatus orderStatus);
+    Order findById(Long id);
     Page<OrderResponse> findByKeywordAndBetweenDate(OrderTrackingRequest request, Principal principal);
     OrderResponse restoreStockForOrderItems(Principal principal);
 }

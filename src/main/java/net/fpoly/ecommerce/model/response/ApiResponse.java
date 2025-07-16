@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@Data
 @Builder
+@Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     private boolean isSuccess;

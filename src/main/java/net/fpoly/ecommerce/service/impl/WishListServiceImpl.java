@@ -11,8 +11,8 @@ import net.fpoly.ecommerce.service.WishListService;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,12 +28,14 @@ public class WishListServiceImpl implements WishListService {
         WishList isWishList = wishListRepo.findByProductAndUser(request.getProduct(), user);
         if (isWishList != null) {
             isWishList.setStatus(1);
+            isWishList.setCreatedAt(new Date());
             return wishListRepo.save(isWishList);
         }
         WishList wishList = new WishList();
         wishList.setProduct(request.getProduct());
         wishList.setUser(user);
         wishList.setStatus(1);
+        wishList.setCreatedAt(new Date());
         return wishListRepo.save(wishList);
     }
 

@@ -34,6 +34,9 @@ public class Order {
     @Column(nullable = false)
     private BigDecimal totalAmount;
 
+    @Column()
+    private BigDecimal shippingFee;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 

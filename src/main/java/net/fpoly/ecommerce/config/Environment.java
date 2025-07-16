@@ -1,5 +1,7 @@
 package net.fpoly.ecommerce.config;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
@@ -43,10 +45,17 @@ public class Environment {
         try (InputStream input = Environment.class.getClassLoader().getResourceAsStream("application.properties")) {
             Properties prop = new Properties();
             prop.load(input);
+            Dotenv dotenv = Dotenv.configure()
+                    .ignoreIfMissing()
+                    .load();
 
+            String accessKey = dotenv.get("DEV_ACCESS_KEY");
+            String partnerCode = dotenv.get("DEV_PARTNER_CODE");
+            String secretKey = dotenv.get("DEV_SECRET_KEY");
+            String endpoint = dotenv.get("DEV_MOMO_ENDPOINT");
             switch (target) {
                 case DEV:
-                    MoMoEndpoint devEndpoint = new MoMoEndpoint(prop.getProperty("DEV_MOMO_ENDPOINT"),
+                    MoMoEndpoint devEndpoint = new MoMoEndpoint(endpoint,
                             prop.getProperty("CREATE_URL"),
                             prop.getProperty("REFUND_URL"),
                             prop.getProperty("QUERY_URL"),
@@ -55,7 +64,7 @@ public class Environment {
                             prop.getProperty("TOKEN_BIND_URL"),
                             prop.getProperty("TOKEN_INQUIRY_URL"),
                             prop.getProperty("TOKEN_DELETE_URL"));
-                    PartnerInfo devInfo = new PartnerInfo(prop.getProperty("DEV_PARTNER_CODE"), prop.getProperty("DEV_ACCESS_KEY"), prop.getProperty("DEV_SECRET_KEY"));
+                    PartnerInfo devInfo = new PartnerInfo(partnerCode, accessKey, secretKey);
                     Environment dev = new Environment(devEndpoint, devInfo, target);
                     return dev;
                 case PROD:
@@ -67,7 +76,8 @@ public class Environment {
                             prop.getProperty("TOKEN_PAY_URL"),
                             prop.getProperty("TOKEN_BIND_URL"),
                             prop.getProperty("TOKEN_INQUIRY_URL"),
-                            prop.getProperty("TOKEN_DELETE_URL"));                    PartnerInfo prodInfo = new PartnerInfo(prop.getProperty("PROD_PARTNER_CODE"), prop.getProperty("PROD_ACCESS_KEY"), prop.getProperty("PROD_SECRET_KEY"));
+                            prop.getProperty("TOKEN_DELETE_URL"));
+                    PartnerInfo prodInfo = new PartnerInfo(prop.getProperty("PROD_PARTNER_CODE"), prop.getProperty("PROD_ACCESS_KEY"), prop.getProperty("PROD_SECRET_KEY"));
                     Environment prod = new Environment(prodEndpoint, prodInfo, target);
                     return prod;
                 default:

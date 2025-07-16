@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.fpoly.ecommerce.model.OrderItem;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -22,5 +23,6 @@ public class OrderRequest {
 
     private String sortBy;
 
+    private BigDecimal shippingFee;
 
 }

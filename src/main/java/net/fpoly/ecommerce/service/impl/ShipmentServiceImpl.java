@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ShipmentRequestImpl implements ShipmentService {
+public class ShipmentServiceImpl implements ShipmentService {
 
     @Autowired
     private ShipmentRepo shipmentRepo;
@@ -19,15 +19,11 @@ public class ShipmentRequestImpl implements ShipmentService {
         Shipment shipment= new Shipment();
         shipment.setFirstName(shipmentRequest.getFirstName());
         shipment.setLastName(shipmentRequest.getLastName());
-        shipment.setCompanyName(shipmentRequest.getCompanyName());
-        shipment.setCountry(shipmentRequest.getCountry());
         shipment.setAddress(shipmentRequest.getAddress());
-        shipment.setCity(shipmentRequest.getCity());
-        shipment.setState(shipmentRequest.getState());
         shipment.setPhone(shipmentRequest.getPhone());
-        shipment.setZipCode(shipmentRequest.getZipCode());
         shipment.setEmail(shipmentRequest.getEmail());
         shipment.setNotes(shipmentRequest.getNotes());
+        shipment.setIdAddress(shipmentRequest.getIdAddress());
         return shipmentRepo.save(shipment);
     }
 }

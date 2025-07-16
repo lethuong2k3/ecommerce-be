@@ -37,6 +37,8 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderItemRepo orderItemRepo;
 
+    private final PaymentInfoRepo paymentInfoRepo;
+
     private final ProductDetailRepo productDetailRepo;
 
     private final PaymentTypeRepo paymentTypeRepo;
@@ -108,15 +110,15 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderDate(new Date());
         order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
         order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
-        String partnerClientId = "partnerClientId";
         String orderInfo = "Pay with MoMo";
-        String returnURL = "http://localhost:5173/order-status";
-        String notifyURL = "https://google.com.vn";
+        String returnURL = "http://localhost:5173/ket-qua";
+        String notifyURL = "https://ecommerce-be-latest-ftrt.onrender.com/user/momo/notify";
         Environment environment = Environment.selectEnv("dev");
         PaymentResponse captureWalletMoMoResponse = CreateOrderMoMo.process(environment, orderId, requestId, Long.toString(order.getTotalAmount().longValue()),  orderInfo, returnURL, notifyURL, "", RequestType.PAY_WITH_ATM, Boolean.TRUE);
         PaymentInfo paymentInfo = new PaymentInfo();
         paymentInfo.setOrderId(captureWalletMoMoResponse.getOrderId());
         paymentInfo.setRequestId(captureWalletMoMoResponse.getRequestId());
+        order.setPaymentInfo(paymentInfoRepo.save(paymentInfo));
         deductStockForOrderItems(order);
         orderRepo.save(order);
         return captureWalletMoMoResponse;
@@ -144,6 +146,7 @@ public class OrderServiceImpl implements OrderService {
                 order.setOrderStatus(OrderStatus.PENDING);
                 order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
                 order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
+                order.setShippingFee(orderRequest.getShippingFee());
                 deductStockForOrderItems(order);
                 return OrderResponse.convertToOrderResponse(orderRepo.save(order));
             case "MoMo":
@@ -163,6 +166,12 @@ public class OrderServiceImpl implements OrderService {
         }
         return OrderResponse.convertToOrderResponse(order);
     }
+
+    @Override
+    public Order findById(Long id) {
+        return orderRepo.findById(id).orElse(null);
+    }
+
 
     @Override
     public Page<OrderResponse> findByKeywordAndBetweenDate(OrderTrackingRequest request, Principal principal) {
