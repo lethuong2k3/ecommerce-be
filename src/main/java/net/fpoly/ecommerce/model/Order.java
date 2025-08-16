@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +38,10 @@ public class Order {
     @Column()
     private BigDecimal shippingFee;
 
+    @Column()
+    private Long orderCode;
+
+
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
@@ -52,7 +57,4 @@ public class Order {
     @JoinColumn(name = "shipment_id")
     private Shipment shipment;
 
-    @ManyToOne()
-    @JoinColumn(name = "payment_info_id")
-    private PaymentInfo paymentInfo;
 }

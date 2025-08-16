@@ -1,11 +1,11 @@
 package net.fpoly.ecommerce.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.cdimascio.dotenv.Dotenv;
 import lombok.RequiredArgsConstructor;
-import net.fpoly.ecommerce.config.Environment;
 import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.*;
-import net.fpoly.ecommerce.model.momo.PaymentResponse;
-import net.fpoly.ecommerce.model.momo.RequestType;
 import net.fpoly.ecommerce.model.request.OrderRequest;
 import net.fpoly.ecommerce.model.request.OrderTrackingRequest;
 import net.fpoly.ecommerce.model.response.OrderResponse;
@@ -13,18 +13,22 @@ import net.fpoly.ecommerce.repository.*;
 import net.fpoly.ecommerce.service.OrderService;
 import net.fpoly.ecommerce.service.PaymentService;
 import net.fpoly.ecommerce.service.ShipmentService;
-import net.fpoly.ecommerce.service.impl.momo.CreateOrderMoMo;
-import net.fpoly.ecommerce.util.LogUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 
 @Service
@@ -37,8 +41,6 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderItemRepo orderItemRepo;
 
-    private final PaymentInfoRepo paymentInfoRepo;
-
     private final ProductDetailRepo productDetailRepo;
 
     private final PaymentTypeRepo paymentTypeRepo;
@@ -46,6 +48,11 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentService paymentService;
 
     private final ShipmentService shipmentService;
+
+    private final PayOS payOS;
+
+    @Value("${frontend.url}")
+    private String frontEndUrl;
 
     private BigDecimal totalAmount(List<OrderItem> orderItems) {
         return orderItems.stream()
@@ -101,27 +108,34 @@ public class OrderServiceImpl implements OrderService {
         return orderRepo.save(order);
     }
 
-    private PaymentResponse handleMoMoPayment(Order order, Users user, PaymentType paymentType ,OrderRequest orderRequest) throws Exception {
-        LogUtils.init();
-        String requestId = String.valueOf(System.currentTimeMillis());
-        String orderId = String.valueOf(System.currentTimeMillis());
-        Long transId = 2L;
-        order.setOrderStatus(OrderStatus.WAITING);
-        order.setOrderDate(new Date());
-        order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
-        order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
-        String orderInfo = "Pay with MoMo";
-        String returnURL = "http://localhost:5173/ket-qua";
-        String notifyURL = "https://ecommerce-be-latest-ftrt.onrender.com/user/momo/notify";
-        Environment environment = Environment.selectEnv("dev");
-        PaymentResponse captureWalletMoMoResponse = CreateOrderMoMo.process(environment, orderId, requestId, Long.toString(order.getTotalAmount().longValue()),  orderInfo, returnURL, notifyURL, "", RequestType.PAY_WITH_ATM, Boolean.TRUE);
-        PaymentInfo paymentInfo = new PaymentInfo();
-        paymentInfo.setOrderId(captureWalletMoMoResponse.getOrderId());
-        paymentInfo.setRequestId(captureWalletMoMoResponse.getRequestId());
-        order.setPaymentInfo(paymentInfoRepo.save(paymentInfo));
-        deductStockForOrderItems(order);
-        orderRepo.save(order);
-        return captureWalletMoMoResponse;
+    private Object handlePayOSPayment(Order order, OrderRequest orderRequest) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode response = objectMapper.createObjectNode();
+        try {
+            String returnUrl = frontEndUrl + "/thanh-toan/ket-qua";
+            String currentTimeString = String.valueOf(new Date().getTime());
+            long orderCode = Long.parseLong(currentTimeString.substring(currentTimeString.length() - 6));
+            List<ItemData> itemDataList = order.getOrderItems().stream()
+                    .map(orderItem -> ItemData.builder()
+                            .name(orderItem.getProductDetail().getProduct().getName())
+                            .price(orderItem.getItemPrice().intValue())
+                            .quantity(orderItem.getQuantity())
+                            .build())
+                    .toList();
+            PaymentData paymentData = PaymentData.builder().orderCode(orderCode).description("Thanh toan don hang").amount(order.getTotalAmount().intValue() + orderRequest.getShippingFee().intValue())
+                    .items(itemDataList).returnUrl(returnUrl).cancelUrl(returnUrl).build();
+            CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            response.put("error", 0);
+            response.put("message", "success");
+            response.set("data", objectMapper.valueToTree(data));
+            return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("error", -1);
+            response.put("message", "fail");
+            response.set("data", null);
+            return response;
+        }
     }
 
     private void deductStockForOrderItems(Order order) {
@@ -149,8 +163,8 @@ public class OrderServiceImpl implements OrderService {
                 order.setShippingFee(orderRequest.getShippingFee());
                 deductStockForOrderItems(order);
                 return OrderResponse.convertToOrderResponse(orderRepo.save(order));
-            case "MoMo":
-               return handleMoMoPayment(order, user, paymentType, orderRequest);
+            case "VietQR":
+               return handlePayOSPayment(order, orderRequest);
             default:
                 throw new IllegalArgumentException("Unsupported payment type: " + paymentType.getValue());
         }

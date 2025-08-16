@@ -16,4 +16,5 @@ public class ContactRequest {
 
     @NotNull
     private String message;
+
 }
