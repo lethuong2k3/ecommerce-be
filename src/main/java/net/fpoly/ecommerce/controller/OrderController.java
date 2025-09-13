@@ -51,4 +51,8 @@ public class OrderController {
         return ResponseEntity.ok(orderService.findByKeywordAndBetweenDate(request, principal));
     }
 
+    @GetMapping("/user/order-details/{orderCode}")
+    public ResponseEntity<?> getOrderDetails(@PathVariable Long orderCode, Principal principal) {
+        return ResponseEntity.ok(orderService.orderDetails(orderCode, principal));
+    }
 }

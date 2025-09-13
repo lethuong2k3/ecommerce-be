@@ -1,8 +1,8 @@
-package net.fpoly.ecommerce.service.impl;
+package net.fpoly.ecommerce.service.impl.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.exception.InsufficientStockException;
 import net.fpoly.ecommerce.model.*;
@@ -10,16 +10,17 @@ import net.fpoly.ecommerce.model.request.OrderRequest;
 import net.fpoly.ecommerce.model.request.OrderTrackingRequest;
 import net.fpoly.ecommerce.model.response.OrderResponse;
 import net.fpoly.ecommerce.repository.*;
+import net.fpoly.ecommerce.service.OrderHistoryService;
 import net.fpoly.ecommerce.service.OrderService;
 import net.fpoly.ecommerce.service.PaymentService;
 import net.fpoly.ecommerce.service.ShipmentService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
 import vn.payos.type.CheckoutResponseData;
 import vn.payos.type.ItemData;
@@ -27,6 +28,8 @@ import vn.payos.type.PaymentData;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
@@ -49,10 +52,18 @@ public class OrderServiceImpl implements OrderService {
 
     private final ShipmentService shipmentService;
 
+    private final OrderHistoryService orderHistoryService;
+
     private final PayOS payOS;
 
     @Value("${frontend.url}")
     private String frontEndUrl;
+
+    @Value("${reservation.ttl-minutes}")
+    private long ttlMinutes;
+
+    @Value("${reservation.ttl-hours}")
+    private long ttlHours;
 
     private BigDecimal totalAmount(List<OrderItem> orderItems) {
         return orderItems.stream()
@@ -62,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
 
     private Integer checkQuantity(Integer quantity, ProductDetail productDetail) {
          ProductDetail productDetail1 = productDetailRepo.findById(productDetail.getId()).orElseThrow(() -> new IllegalArgumentException("Product detail not found"));
-        if (quantity > productDetail1.getAmount()) {
+        if (quantity > productDetail1.getStockAvailable()) {
             throw new InsufficientStockException("Product name " + productDetail1.getProduct().getName() + "is out of stock");
         }
         return quantity;
@@ -85,7 +96,6 @@ public class OrderServiceImpl implements OrderService {
             Order newOrder = Order.builder()
                     .user(user)
                     .orderStatus(OrderStatus.CART)
-                    .orderDate(new Date())
                     .orderItems(orderItems)
                     .totalAmount(totalAmount(orderItems))
                     .build();
@@ -108,7 +118,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepo.save(order);
     }
 
-    private Object handlePayOSPayment(Order order, OrderRequest orderRequest) throws Exception {
+    public Object handlePayOSPayment(Order order, PaymentType paymentType, Users user,OrderRequest orderRequest) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode response = objectMapper.createObjectNode();
         try {
@@ -125,6 +135,19 @@ public class OrderServiceImpl implements OrderService {
             PaymentData paymentData = PaymentData.builder().orderCode(orderCode).description("Thanh toan don hang").amount(order.getTotalAmount().intValue() + orderRequest.getShippingFee().intValue())
                     .items(itemDataList).returnUrl(returnUrl).cancelUrl(returnUrl).build();
             CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            order.setOrderStatus(OrderStatus.WAITING);
+            order.setOrderDate(Instant.now());
+            order.setExpiresAt(Instant.now().plus(ttlMinutes, ChronoUnit.MINUTES));
+            order.setOrderCode(data.getOrderCode());
+            order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
+            order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
+            order.setShippingFee(orderRequest.getShippingFee());
+            order.getOrderHistories().addAll(List.of(
+                    setOrderHistory(order, OrderStatus.PENDING, Instant.now(), user.getName()),
+                    setOrderHistory(order, OrderStatus.WAITING, Instant.now(), user.getName())
+            ));
+            var saveOrder = orderRepo.save(order);
+            handleStockReserve(saveOrder);
             response.put("error", 0);
             response.put("message", "success");
             response.set("data", objectMapper.valueToTree(data));
@@ -138,7 +161,7 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    private void deductStockForOrderItems(Order order) {
+    public void deductStockForOrderItems(Order order) {
         order.getOrderItems().forEach(item -> {
             ProductDetail productDetail = item.getProductDetail();
             if (productDetail.getAmount() < item.getQuantity()) {
@@ -149,22 +172,48 @@ public class OrderServiceImpl implements OrderService {
         });
     }
 
+    public void handleStockReserve(Order order) {
+        for (var item : order.getOrderItems()) {
+            var productDetail = productDetailRepo.findByIdForUpdate(item.getProductDetail().getId()).orElseThrow(() -> new EntityNotFoundException("Product not found: " + item.getProductDetail().getId()));
+            int available = productDetail.getStockAvailable();
+            if (available < item.getQuantity()) {
+                throw new IllegalStateException("Not enough stock for product " + productDetail.getId() +
+                        ": required=" + item.getQuantity() + ", available=" + available);
+            }
+            productDetail.setStockReserved(productDetail.getStockReserved() + item.getQuantity());
+            productDetailRepo.save(productDetail);
+        }
+    }
+
+    private OrderHistory setOrderHistory(Order order, OrderStatus orderStatus, Instant orderDate, String userName) {
+        OrderHistory orderHistory = new OrderHistory();
+        orderHistory.setOrder(order);
+        orderHistory.setStatus(orderStatus);
+        orderHistory.setChangedAt(orderDate);
+        orderHistory.setChangedBy(userName);
+        return orderHistory;
+    }
+
+
     @Override
+    @Transactional
     public Object updateOrder(OrderRequest orderRequest, Principal principal) throws Exception {
         Users user = userRepo.findByEmail(principal.getName());
         Order order = orderRepo.findByUserAndOrderStatus(user, OrderStatus.CART);
         PaymentType paymentType = paymentTypeRepo.findById(orderRequest.getPaymentTypeId()).orElseThrow(() -> new IllegalArgumentException("Payment type not found"));
         switch (paymentType.getValue()) {
             case "COD":
-                order.setOrderDate(new Date());
+                order.setOrderDate(Instant.now());
+                order.setExpiresAt(Instant.now().plus(ttlHours, ChronoUnit.HOURS));
                 order.setOrderStatus(OrderStatus.PENDING);
                 order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
                 order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
                 order.setShippingFee(orderRequest.getShippingFee());
+                order.getOrderHistories().add(setOrderHistory(order, OrderStatus.PENDING, Instant.now(), principal.getName()));
                 deductStockForOrderItems(order);
                 return OrderResponse.convertToOrderResponse(orderRepo.save(order));
             case "VietQR":
-               return handlePayOSPayment(order, orderRequest);
+               return handlePayOSPayment(order, paymentType, user, orderRequest);
             default:
                 throw new IllegalArgumentException("Unsupported payment type: " + paymentType.getValue());
         }
@@ -178,14 +227,8 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             return null;
         }
-        return OrderResponse.convertToOrderResponse(order);
+        return OrderResponse.convertToCartResponse(order);
     }
-
-    @Override
-    public Order findById(Long id) {
-        return orderRepo.findById(id).orElse(null);
-    }
-
 
     @Override
     public Page<OrderResponse> findByKeywordAndBetweenDate(OrderTrackingRequest request, Principal principal) {
@@ -197,10 +240,83 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderResponse restoreStockForOrderItems(Principal principal) {
-        Users user = userRepo.findByEmail(principal.getName());
-
-        return null;
+    public Optional<Order> findByOrderCode(Long orderCode) {
+        return orderRepo.findByOrderCode(orderCode);
     }
- 
+
+    private void confirmPayment(Order order) throws Exception {
+        if (order.getOrderStatus() != OrderStatus.WAITING) {
+            return;
+        }
+        if (order.getExpiresAt().isBefore(Instant.now())) {
+            payOS.cancelPaymentLink(order.getOrderCode().intValue(), null);
+            cancelOrder(order, "System");
+            throw new IllegalArgumentException("Order expired; cannot confirm payment");
+        }
+        order.getOrderItems().forEach(oi -> {
+            var product = productDetailRepo.findByIdForUpdate(oi.getProductDetail().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Product not found: " + oi.getProductDetail().getId()));
+            product.setStockReserved(product.getStockReserved() - oi.getQuantity());
+            product.setAmount(product.getAmount() - oi.getQuantity());
+        });
+        order.setOrderStatus(OrderStatus.PAID);
+        order.getOrderHistories().add(setOrderHistory(order, OrderStatus.PENDING, Instant.now(), "System")) ;
+        orderRepo.save(order);
+    }
+
+    @Override
+    @Transactional
+    public void confirmPaymentByCode(Long orderCode) throws Exception {
+        var order = findByOrderCode(orderCode).get();
+        confirmPayment(order);
+    }
+
+    @Override
+    public void cancelOrder(Order order, Principal principal) throws Exception {
+        Users user = userRepo.findByEmail(principal.getName());
+        internalCancelOrder(order, user.getName());
+    }
+
+    public void cancelOrder(Order order, String cancelledBy) throws Exception {
+        internalCancelOrder(order, cancelledBy);
+    }
+
+    private void internalCancelOrder(Order order, String cancelledBy) throws Exception {
+        order.getOrderItems().forEach(oi -> {
+            var product = productDetailRepo.findByIdForUpdate(oi.getProductDetail().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Product not found: " + oi.getProductDetail().getId()));
+            product.setStockReserved(product.getStockReserved() - oi.getQuantity());
+        });
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.getOrderHistories().add(
+                setOrderHistory(order, OrderStatus.CANCELLED, Instant.now(), cancelledBy)
+        );
+        orderRepo.save(order);
+    }
+
+    @Override
+    @Transactional
+    public void expireWaitingOrders() {
+        var now = Instant.now();
+        var expired = orderRepo.findExpiredWaiting(now);
+        for (var order : expired) {
+            order.getOrderItems().forEach(oi -> {
+                var productDetail = productDetailRepo.findByIdForUpdate(oi.getProductDetail().getId()).orElseThrow(() -> new EntityNotFoundException("Product not found: " + oi.getProductDetail().getId()));
+                productDetail.setStockReserved(productDetail.getStockReserved() - oi.getQuantity());
+            });
+            order.setOrderStatus(OrderStatus.EXPIRED);
+            order.getOrderHistories().add(setOrderHistory(order, OrderStatus.EXPIRED, Instant.now(), "System"));
+        }
+        orderRepo.saveAll(expired);
+    }
+
+    @Override
+    public OrderResponse orderDetails(Long orderCode, Principal principal) {
+        List<OrderHistory> orderHistories = orderHistoryService.getOrderHistory(orderCode, principal);
+        Order order = orderRepo.findById(orderCode).orElseThrow(null);
+        order.getOrderHistories().addAll(orderHistories);
+        return OrderResponse.convertToOrderDetailResponse(order);
+    }
+
 }

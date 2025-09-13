@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.fpoly.ecommerce.model.request.MyWebhookPayload;
+import net.fpoly.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import vn.payos.PayOS;
@@ -11,19 +12,24 @@ import vn.payos.type.PaymentLinkData;
 import vn.payos.type.Webhook;
 import vn.payos.type.WebhookData;
 
+import java.security.Principal;
+
 @RestController
 public class PayOSController {
 
     @Autowired
     private PayOS payOS;
 
+    @Autowired
+    private OrderService orderService;
+
     @PutMapping("/payos/{orderId}")
-    public ObjectNode cancelOrder(@PathVariable("orderId") int orderId) {
+    public ObjectNode cancelOrder(@PathVariable("orderId") int orderId, Principal principal) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode response = objectMapper.createObjectNode();
         try {
             PaymentLinkData order = payOS.cancelPaymentLink(orderId, null);
-
+            orderService.cancelOrder(orderService.findByOrderCode(order.getOrderCode()).get(), principal);
             response.set("data", objectMapper.valueToTree(order));
             response.put("error", 0);
             response.put("message", "ok");
@@ -55,6 +61,7 @@ public class PayOSController {
             response.put("message", "Webhook delivered");
             response.set("data", null);
             WebhookData data = payOS.verifyPaymentWebhookData(webhookBody);
+            orderService.confirmPaymentByCode(data.getOrderCode());
             return response;
         } catch (Exception e) {
             e.printStackTrace();

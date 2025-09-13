@@ -1,4 +1,4 @@
-package net.fpoly.ecommerce.service.impl;
+package net.fpoly.ecommerce.service.impl.order;
 
 import lombok.RequiredArgsConstructor;
 import net.fpoly.ecommerce.exception.InsufficientStockException;
@@ -8,7 +8,6 @@ import net.fpoly.ecommerce.repository.OrderRepo;
 import net.fpoly.ecommerce.repository.ProductDetailRepo;
 import net.fpoly.ecommerce.repository.UserRepo;
 import net.fpoly.ecommerce.service.OrderItemService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

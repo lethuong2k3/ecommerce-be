@@ -1,6 +1,7 @@
 package net.fpoly.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -25,8 +26,8 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date orderDate;
+    @Column()
+    private Instant orderDate;
 
     @ManyToOne()
     @JoinColumn(name = "user_id")
@@ -41,6 +42,8 @@ public class Order {
     @Column()
     private Long orderCode;
 
+    @Column()
+    private Instant expiresAt;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
@@ -57,4 +60,7 @@ public class Order {
     @JoinColumn(name = "shipment_id")
     private Shipment shipment;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<OrderHistory> orderHistories;
 }

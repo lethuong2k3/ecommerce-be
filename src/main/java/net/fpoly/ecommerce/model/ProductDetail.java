@@ -36,9 +36,17 @@ public class ProductDetail {
     private int amount;
 
     @Column(nullable = false)
+    private int stockReserved;
+
+    @Column(nullable = false)
     private int status;
 
     @OneToMany(mappedBy = "productDetail")
     @JsonIgnore
     private List<OrderItem> orderItems;
+
+    @Transient
+    public int getStockAvailable() {
+        return amount - stockReserved;
+    }
 }

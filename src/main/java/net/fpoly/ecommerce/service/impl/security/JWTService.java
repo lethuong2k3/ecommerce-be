@@ -1,4 +1,4 @@
-package net.fpoly.ecommerce.service.impl;
+package net.fpoly.ecommerce.service.impl.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
