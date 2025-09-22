@@ -24,6 +24,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipment.setEmail(shipmentRequest.getEmail());
         shipment.setNotes(shipmentRequest.getNotes());
         shipment.setIdAddress(shipmentRequest.getIdAddress());
+        shipment.setUser(user);
         return shipmentRepo.save(shipment);
     }
 }

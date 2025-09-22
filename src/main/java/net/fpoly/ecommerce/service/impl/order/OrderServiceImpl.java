@@ -203,6 +203,9 @@ public class OrderServiceImpl implements OrderService {
         PaymentType paymentType = paymentTypeRepo.findById(orderRequest.getPaymentTypeId()).orElseThrow(() -> new IllegalArgumentException("Payment type not found"));
         switch (paymentType.getValue()) {
             case "COD":
+                String currentTimeString = String.valueOf(new Date().getTime());
+                long orderCode = Long.parseLong(currentTimeString.substring(currentTimeString.length() - 6));
+                order.setOrderCode(orderCode);
                 order.setOrderDate(Instant.now());
                 order.setExpiresAt(Instant.now().plus(ttlHours, ChronoUnit.HOURS));
                 order.setOrderStatus(OrderStatus.PENDING);

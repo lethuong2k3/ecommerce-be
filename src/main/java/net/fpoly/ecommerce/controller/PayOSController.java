@@ -57,11 +57,11 @@ public class PayOSController {
                 .build();
         try {
             // Init Response
-            response.put("error", 0);
-            response.put("message", "Webhook delivered");
-            response.set("data", null);
             WebhookData data = payOS.verifyPaymentWebhookData(webhookBody);
             orderService.confirmPaymentByCode(data.getOrderCode());
+            response.put("error", 0);
+            response.put("status", 200);
+            response.set("data", objectMapper.valueToTree(data));
             return response;
         } catch (Exception e) {
             e.printStackTrace();
