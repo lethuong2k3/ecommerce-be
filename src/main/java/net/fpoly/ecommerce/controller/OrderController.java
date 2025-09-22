@@ -46,6 +46,15 @@ public class OrderController {
         return ResponseEntity.ok(orderService.findByUserAndOrderStatus(principal, OrderStatus.CART));
     }
 
+    @GetMapping("/user/order/{orderCode}")
+    public ResponseEntity<?> getOrder(@PathVariable Long orderCode) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success(orderService.findByOrderCode(orderCode)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("400", e.getMessage()));
+        }
+    }
+
     @PostMapping("/user/order-tracking")
     public ResponseEntity<?> getOrders(@RequestBody OrderTrackingRequest request, Principal principal) {
         return ResponseEntity.ok(orderService.findByKeywordAndBetweenDate(request, principal));

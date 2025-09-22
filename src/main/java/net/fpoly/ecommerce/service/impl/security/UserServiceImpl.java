@@ -1,6 +1,5 @@
 package net.fpoly.ecommerce.service.impl.security;
 
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.fpoly.ecommerce.constants.VerifyUser;
@@ -204,8 +203,8 @@ public class UserServiceImpl implements UserService {
                 + "</body>"
                 + "</html>";
         try {
-            emailService.sendVerificationEmail(user.getEmail(), subject, htmlMessage);
-        } catch (MessagingException e) {
+            emailService.sendEmail(user.getEmail(), subject, htmlMessage);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
