@@ -142,10 +142,7 @@ public class OrderServiceImpl implements OrderService {
             order.setPayment(paymentService.createPayment(paymentType, user, order.getTotalAmount()));
             order.setShipment(shipmentService.createShipment(orderRequest.getShipmentRequest(), user));
             order.setShippingFee(orderRequest.getShippingFee());
-            order.getOrderHistories().addAll(List.of(
-                    setOrderHistory(order, OrderStatus.PENDING, Instant.now(), user.getName()),
-                    setOrderHistory(order, OrderStatus.WAITING, Instant.now(), user.getName())
-            ));
+            order.getOrderHistories().add(setOrderHistory(order, OrderStatus.WAITING, Instant.now(), user.getName()));
             var saveOrder = orderRepo.save(order);
             handleStockReserve(saveOrder);
             response.put("error", 0);
@@ -275,6 +272,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void cancelOrder(Order order, Principal principal) throws Exception {
         Users user = userRepo.findByEmail(principal.getName());
         internalCancelOrder(order, user.getName());
@@ -317,7 +315,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse orderDetails(Long orderCode, Principal principal) {
         List<OrderHistory> orderHistories = orderHistoryService.getOrderHistory(orderCode, principal);
-        Order order = orderRepo.findById(orderCode).orElseThrow(null);
+        Order order = orderRepo.findByOrderCode(orderCode).orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với mã: " + orderCode));
         order.getOrderHistories().addAll(orderHistories);
         return OrderResponse.convertToOrderDetailResponse(order);
     }

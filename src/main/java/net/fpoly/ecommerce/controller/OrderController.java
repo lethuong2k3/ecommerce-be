@@ -1,12 +1,14 @@
 package net.fpoly.ecommerce.controller;
 
 import net.fpoly.ecommerce.exception.InsufficientStockException;
+import net.fpoly.ecommerce.model.Order;
 import net.fpoly.ecommerce.model.OrderStatus;
 import net.fpoly.ecommerce.model.request.OrderRequest;
 import net.fpoly.ecommerce.model.request.OrderTrackingRequest;
 import net.fpoly.ecommerce.model.response.ApiResponse;
 import net.fpoly.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,11 +59,24 @@ public class OrderController {
 
     @PostMapping("/user/order-tracking")
     public ResponseEntity<?> getOrders(@RequestBody OrderTrackingRequest request, Principal principal) {
-        return ResponseEntity.ok(orderService.findByKeywordAndBetweenDate(request, principal));
+        try {
+            return ResponseEntity.ok(orderService.findByKeywordAndBetweenDate(request, principal));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("400", e.getMessage()));        }
     }
 
     @GetMapping("/user/order-details/{orderCode}")
     public ResponseEntity<?> getOrderDetails(@PathVariable Long orderCode, Principal principal) {
         return ResponseEntity.ok(orderService.orderDetails(orderCode, principal));
+    }
+
+    @PostMapping("/user/order/cancel/{orderCode}")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderCode, Principal principal) {
+        try {
+            Order order = orderService.findByOrderCode(orderCode).get();
+            orderService.cancelOrder(order, principal);
+            return ResponseEntity.ok("Hủy đơn hàng thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("400", e.getMessage()));        }
     }
 }
